@@ -22,7 +22,7 @@ export class AuthService {
 
   setToken(token: string): void {
     if (typeof window !== 'undefined') {
-      Cookies.set('token', token, { expires: 7 }); // Token expires in 7 days
+      Cookies.set('token', token, { expires: 7 });
       axios.defaults.headers.common['Authorization'] = `Bearer ${token}`;
     }
   }

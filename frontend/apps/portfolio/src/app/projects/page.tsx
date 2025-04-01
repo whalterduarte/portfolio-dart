@@ -2,20 +2,17 @@ import { ProjectService } from '../../../../../lib/services/project.service';
 import { Box, Container, Typography } from '@mui/material';
 import ClientProjectsPage from '../../components/projects/ClientProjectsPage';
 
-// Para revalidar a página
 export const dynamic = 'force-dynamic';
 export const revalidate = 0;
 
 const projectService = new ProjectService();
 
 export default async function ProjectsPage() {
-  // Usando o método aprimorado que trata erros 404 e retorna um array vazio
   const projects = await projectService.findAll();
-  console.log('Projects in page:', projects); // Debug
+  console.log('Projects in page:', projects);
 
   return (
     <Box>
-      {/* Hero Section */}
       <Box
         sx={{
           position: 'relative',
@@ -26,7 +23,6 @@ export default async function ProjectsPage() {
           overflow: 'hidden'
         }}
       >
-        {/* Background elements */}
         <Box
           sx={{
             position: 'absolute',
@@ -76,7 +72,6 @@ export default async function ProjectsPage() {
         </Container>
       </Box>
 
-      {/* Cliente component com timeline e cards */}
       <ClientProjectsPage projects={projects} />
     </Box>
   );

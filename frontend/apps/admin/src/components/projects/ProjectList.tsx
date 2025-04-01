@@ -54,7 +54,7 @@ export function ProjectList() {
                 Delete
               </button>
               <button
-                onClick={() => {/* Add edit handler */}}
+                onClick={() => {/* Add edit handler */ }}
                 className="bg-blue-500 text-white px-3 py-1 rounded hover:bg-blue-600"
               >
                 Edit

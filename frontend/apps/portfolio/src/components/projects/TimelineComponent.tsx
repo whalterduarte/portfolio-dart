@@ -13,8 +13,7 @@ interface TimelineComponentProps {
 
 export default function TimelineComponent({ projects }: TimelineComponentProps) {
   const theme = useTheme();
-  
-  // Ordenar projetos por data de criação (do mais recente para o mais antigo)
+
   const sortedProjects = [...projects].sort((a, b) => {
     return new Date(b.createdAt || 0).getTime() - new Date(a.createdAt || 0).getTime();
   });
@@ -29,8 +28,8 @@ export default function TimelineComponent({ projects }: TimelineComponentProps) 
               year: 'numeric',
               month: 'long'
             })}
-            iconStyle={{ 
-              background: theme.palette.primary.main, 
+            iconStyle={{
+              background: theme.palette.primary.main,
               color: '#fff',
               boxShadow: `0 0 0 4px ${theme.palette.primary.main}, inset 0 2px 0 rgba(0, 0, 0, 0.08), 0 3px 0 4px rgba(0, 0, 0, 0.05)`
             }}
@@ -64,15 +63,15 @@ export default function TimelineComponent({ projects }: TimelineComponentProps) 
                 </Typography>
               </Box>
             </Box>
-            
+
             <Typography variant="body1" paragraph>
               {project.description}
             </Typography>
-            
+
             <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5, my: 2 }}>
-              {project.technologies.map((tech) => (
+              {project.technologies.map((tech, techIndex) => (
                 <Chip
-                  key={tech}
+                  key={`${project.id}-tech-${techIndex}-${tech}`}
                   label={tech}
                   size="small"
                   color="primary"
@@ -81,7 +80,7 @@ export default function TimelineComponent({ projects }: TimelineComponentProps) 
                 />
               ))}
             </Box>
-            
+
             <Box sx={{ display: 'flex', gap: 1, mt: 3, justifyContent: 'flex-end' }}>
               {project.githubUrl && (
                 <Button

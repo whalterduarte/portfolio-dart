@@ -1,14 +1,14 @@
 'use client';
 
 import { Project } from '../../../../../lib/types/project.types';
-import { 
-  Card, 
-  CardMedia, 
-  CardContent, 
-  CardActions, 
-  Typography, 
-  Chip, 
-  Box, 
+import {
+  Card,
+  CardMedia,
+  CardContent,
+  CardActions,
+  Typography,
+  Chip,
+  Box,
   Button,
   styled,
   alpha
@@ -50,34 +50,33 @@ export function ProjectCard({ project }: ProjectCardProps) {
         alt={project.title}
         sx={{ objectFit: 'cover' }}
       />
-      
+
       <CardContent sx={{ flexGrow: 1 }}>
         <Typography variant="h5" component="h3" gutterBottom fontWeight="bold">
           {project.title}
         </Typography>
-        
+
         <Typography variant="body2" color="text.secondary" paragraph>
           {project.description}
         </Typography>
-        
+
         <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5, mb: 2, mt: 3 }}>
-          {project.technologies.map((tech) => (
-            <Chip 
-              key={tech} 
-              label={tech} 
-              size="small" 
-              variant="outlined" 
+          {project.technologies.map((tech, index) => (
+            <Chip
+              key={`${project.id}-${index}-${tech}`}
+              label={tech}
+              size="small"
+              variant="outlined"
               sx={{ mr: 0.5, mb: 0.5 }}
             />
           ))}
         </Box>
       </CardContent>
-      
+
       <CardActions sx={{ p: 2, pt: 0 }}>
         {project.githubUrl && (
           <ActionButton
             href={project.githubUrl}
-            target="_blank"
             rel="noopener noreferrer"
             startIcon={<GitHubIcon />}
             size="small"
@@ -90,7 +89,6 @@ export function ProjectCard({ project }: ProjectCardProps) {
         {project.liveUrl && (
           <ActionButton
             href={project.liveUrl}
-            target="_blank"
             rel="noopener noreferrer"
             startIcon={<LaunchIcon />}
             size="small"

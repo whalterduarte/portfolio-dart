@@ -6,11 +6,11 @@ import { AuthService } from '@lib/services/auth.service';
 import { useState } from 'react';
 
 // Material UI Imports
-import { 
-  AppBar, 
-  Toolbar, 
-  Typography, 
-  Button, 
+import {
+  AppBar,
+  Toolbar,
+  Typography,
+  Button,
   Container,
   Box,
   IconButton,
@@ -26,7 +26,9 @@ import {
   Folder as ProjectsIcon,
   Logout as LogoutIcon,
   Menu as MenuIcon,
-  Person as PersonIcon
+  Person as PersonIcon,
+  AccountCircle as ProfileIcon,
+  Info as AboutIcon
 } from '@mui/icons-material';
 
 const authService = new AuthService();
@@ -35,7 +37,8 @@ export function AdminHeader() {
   const pathname = usePathname();
   const router = useRouter();
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
-  
+  const [mobileAnchorEl, setMobileAnchorEl] = useState<null | HTMLElement>(null);
+
   const handleLogout = () => {
     authService.logout();
     router.push('/login');
@@ -47,8 +50,16 @@ export function AdminHeader() {
     setAnchorEl(event.currentTarget);
   };
 
+  const handleMobileMenu = (event: React.MouseEvent<HTMLElement>) => {
+    setMobileAnchorEl(event.currentTarget);
+  };
+
   const handleClose = () => {
     setAnchorEl(null);
+  };
+
+  const handleMobileClose = () => {
+    setMobileAnchorEl(null);
   };
 
   return (
@@ -61,8 +72,8 @@ export function AdminHeader() {
               variant="h6"
               component={Link}
               href="/dashboard"
-              sx={{ 
-                color: 'white', 
+              sx={{
+                color: 'white',
                 fontWeight: 700,
                 textDecoration: 'none',
                 display: 'flex',
@@ -79,7 +90,7 @@ export function AdminHeader() {
               component={Link}
               href="/dashboard"
               startIcon={<DashboardIcon />}
-              sx={{ 
+              sx={{
                 color: 'white',
                 backgroundColor: isActive('/dashboard') ? 'rgba(255, 255, 255, 0.15)' : 'transparent',
                 '&:hover': { backgroundColor: 'rgba(255, 255, 255, 0.25)' }
@@ -91,13 +102,37 @@ export function AdminHeader() {
               component={Link}
               href="/projects"
               startIcon={<ProjectsIcon />}
-              sx={{ 
+              sx={{
                 color: 'white',
                 backgroundColor: isActive('/projects') ? 'rgba(255, 255, 255, 0.15)' : 'transparent',
                 '&:hover': { backgroundColor: 'rgba(255, 255, 255, 0.25)' }
               }}
             >
               Projetos
+            </Button>
+            <Button
+              component={Link}
+              href="/profile"
+              startIcon={<ProfileIcon />}
+              sx={{
+                color: 'white',
+                backgroundColor: isActive('/profile') ? 'rgba(255, 255, 255, 0.15)' : 'transparent',
+                '&:hover': { backgroundColor: 'rgba(255, 255, 255, 0.25)' }
+              }}
+            >
+              Perfil
+            </Button>
+            <Button
+              component={Link}
+              href="/about"
+              startIcon={<AboutIcon />}
+              sx={{
+                color: 'white',
+                backgroundColor: isActive('/about') ? 'rgba(255, 255, 255, 0.15)' : 'transparent',
+                '&:hover': { backgroundColor: 'rgba(255, 255, 255, 0.25)' }
+              }}
+            >
+              About
             </Button>
           </Box>
 
@@ -131,7 +166,7 @@ export function AdminHeader() {
               open={Boolean(anchorEl)}
               onClose={handleClose}
             >
-              <MenuItem onClick={handleClose}>
+              <MenuItem onClick={() => {handleClose(); router.push('/profile');}}>
                 <Avatar sx={{ width: 24, height: 24, mr: 1 }} /> Meu Perfil
               </MenuItem>
               <Divider />
@@ -144,16 +179,66 @@ export function AdminHeader() {
             </Menu>
           </Box>
 
-          {/* Mobile Menu */}
+          {/* Mobile Menu Button */}
           <IconButton
             color="inherit"
             aria-label="menu"
             edge="start"
-            onClick={handleMenu}
-            sx={{ mr: 2, display: { sm: 'flex', md: 'none' } }}
+            onClick={handleMobileMenu}
+            sx={{ mr: 2, display: { xs: 'flex', md: 'none' } }}
           >
             <MenuIcon />
           </IconButton>
+          
+          {/* Mobile Menu */}
+          <Menu
+            id="mobile-menu-appbar"
+            anchorEl={mobileAnchorEl}
+            anchorOrigin={{
+              vertical: 'bottom',
+              horizontal: 'left',
+            }}
+            keepMounted
+            transformOrigin={{
+              vertical: 'top',
+              horizontal: 'left',
+            }}
+            open={Boolean(mobileAnchorEl)}
+            onClose={handleMobileClose}
+            sx={{ display: { xs: 'block', md: 'none' } }}
+          >
+            <MenuItem onClick={() => {handleMobileClose(); router.push('/dashboard');}}>
+              <ListItemIcon>
+                <DashboardIcon fontSize="small" />
+              </ListItemIcon>
+              Dashboard
+            </MenuItem>
+            <MenuItem onClick={() => {handleMobileClose(); router.push('/projects');}}>
+              <ListItemIcon>
+                <ProjectsIcon fontSize="small" />
+              </ListItemIcon>
+              Projetos
+            </MenuItem>
+            <MenuItem onClick={() => {handleMobileClose(); router.push('/profile');}}>
+              <ListItemIcon>
+                <ProfileIcon fontSize="small" />
+              </ListItemIcon>
+              Perfil
+            </MenuItem>
+            <MenuItem onClick={() => {handleMobileClose(); router.push('/about');}}>
+              <ListItemIcon>
+                <AboutIcon fontSize="small" />
+              </ListItemIcon>
+              About
+            </MenuItem>
+            <Divider />
+            <MenuItem onClick={handleLogout}>
+              <ListItemIcon>
+                <LogoutIcon fontSize="small" />
+              </ListItemIcon>
+              Sair
+            </MenuItem>
+          </Menu>
         </Toolbar>
       </Container>
     </AppBar>

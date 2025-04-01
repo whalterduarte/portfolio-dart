@@ -2,39 +2,23 @@
 
 import React from 'react';
 import { Project } from '../../../../../lib/types/project.types';
-import { Box, Container, Typography, Grid, Divider, Paper } from '@mui/material';
+import { Box, Container, Typography, Divider, Paper } from '@mui/material';
 import { ProjectCard } from './ProjectCard';
 import dynamic from 'next/dynamic';
 
-// Carregando o componente da linha do tempo dinamicamente (apenas no lado do cliente)
 const TimelineComponent = dynamic(() => import('./TimelineComponent'), { ssr: false });
-
-// Tipos personalizados para projetos
-interface SampleProject {
-  id: string;
-  title: string;
-  description: string;
-  imageUrl: string;
-  technologies: string[];
-  githubUrl?: string;
-  liveUrl?: string;
-  createdAt: string;
-  updatedAt: string;
-}
 
 interface ClientProjectsPageProps {
   projects: Project[];
 }
 
 export default function ClientProjectsPage({ projects }: ClientProjectsPageProps) {
-  // Convertemos projetos da API para ter certeza que datas são objetos Date
   const processedProjects = projects.map(project => ({
     ...project,
     createdAt: project.createdAt instanceof Date ? project.createdAt : new Date(project.createdAt),
     updatedAt: project.updatedAt instanceof Date ? project.updatedAt : new Date(project.updatedAt || project.createdAt)
   }));
 
-  // Mensagem a ser exibida quando não houver projetos
   const noProjectsMessage = () => (
     <Box sx={{ textAlign: 'center', py: 8 }}>
       <Typography variant="h6" color="text.secondary">
@@ -46,12 +30,10 @@ export default function ClientProjectsPage({ projects }: ClientProjectsPageProps
     </Box>
   );
 
-  // Projetos a exibir - apenas os do banco de dados
   const displayProjects: Project[] = processedProjects;
 
   return (
     <>
-      {/* Timeline View */}
       <Container maxWidth="lg">
         <Box sx={{ mb: 6 }}>
           <Box sx={{ display: 'flex', alignItems: 'center', mb: 4 }}>
@@ -71,7 +53,6 @@ export default function ClientProjectsPage({ projects }: ClientProjectsPageProps
         </Box>
       </Container>
 
-      {/* Card View */}
       <Container maxWidth="lg" sx={{ py: 6 }}>
         <Box sx={{ display: 'flex', alignItems: 'center', mb: 4 }}>
           <Divider sx={{ flexGrow: 1, mr: 2 }} />
@@ -80,26 +61,22 @@ export default function ClientProjectsPage({ projects }: ClientProjectsPageProps
           </Typography>
           <Divider sx={{ flexGrow: 1, ml: 2 }} />
         </Box>
-        
-        <Grid container spacing={4}>
+
+        <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', sm: 'repeat(2, 1fr)', md: 'repeat(3, 1fr)' }, gap: 4 }}>
           {displayProjects.length > 0 ? (
             displayProjects.map((project) => (
-              <Grid 
-                key={project.id} 
-                // Usando gridColumn diretamente via sx props em vez de item para compatibilidade
-                sx={{ gridColumn: { xs: 'span 12', sm: 'span 6', md: 'span 4' } }}
-              >
+              <Box key={project.id}>
                 <ProjectCard project={project} />
-              </Grid>
+              </Box>
             ))
           ) : (
-            <Box sx={{ width: '100%', textAlign: 'center', py: 8 }}>
+            <Box sx={{ gridColumn: '1 / -1', textAlign: 'center', py: 8 }}>
               <Typography variant="h6" color="text.secondary">
                 Nenhum projeto encontrado.
               </Typography>
             </Box>
           )}
-        </Grid>
+        </Box>
       </Container>
     </>
   );

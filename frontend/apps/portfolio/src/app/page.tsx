@@ -1,45 +1,20 @@
 'use client';
 
-import { useState, useEffect } from 'react';
-import Image from 'next/image';
 import Link from 'next/link';
+import { useEffect, useState } from 'react';
+import { alpha, Avatar, Box, Button, Container, Divider, IconButton, styled, Typography, useMediaQuery, useTheme } from '@mui/material';
+import { ChevronRight, GitHub, LinkedIn, Twitter } from '@mui/icons-material';
+import { Navigation } from '../components/layout/Navigation';
+import dynamic from 'next/dynamic';
+import { Project } from '../../../../lib/types/project.types';
+import { Profile } from '../../../../lib/types/profile.types';
+import { ProjectCard } from '../components/projects/ProjectCard';
+import { ProjectService } from '../../../../lib/services/project.service';
+import { ProfileService } from '../../../../lib/services/profile.service';
 
-// Material UI imports
-import { 
-  Box, 
-  Typography, 
-  Button, 
-  Container,
-  AppBar,
-  Toolbar,
-  IconButton,
-  Menu,
-  MenuItem,
-  useMediaQuery,
-  useTheme,
-  styled,
-  alpha,
-  Drawer,
-  List,
-  ListItem,
-  ListItemText,
-  ListItemButton,
-  Avatar,
-  Divider
-} from '@mui/material';
+const TimelineComponent = dynamic(() => import('../components/projects/TimelineComponent'), { ssr: false });
+const AboutMeSection = dynamic(() => import('../components/about/AboutMeSection'), { ssr: false });
 
-import {
-  Menu as MenuIcon,
-  KeyboardArrowDown,
-  GitHub,
-  LinkedIn,
-  Twitter,
-  Code,
-  ChevronRight,
-  Close
-} from '@mui/icons-material';
-
-// Componente de partícula animada para o background
 const Particle = styled(Box)(({ theme }) => ({
   position: 'absolute',
   borderRadius: '50%',
@@ -47,7 +22,6 @@ const Particle = styled(Box)(({ theme }) => ({
   animation: 'floatParticle 15s infinite ease-in-out'
 }));
 
-// Estilo para o botão destacado
 const PrimaryButton = styled(Button)(({ theme }) => ({
   borderRadius: '30px',
   padding: '10px 25px',
@@ -62,7 +36,6 @@ const PrimaryButton = styled(Button)(({ theme }) => ({
   }
 }));
 
-// Estilo para o botão secundário
 const SecondaryButton = styled(Button)(({ theme }) => ({
   borderRadius: '30px',
   padding: '10px 25px',
@@ -76,7 +49,6 @@ const SecondaryButton = styled(Button)(({ theme }) => ({
   }
 }));
 
-// Lista de links do menu
 const menuLinks = [
   { title: 'Início', path: '/' },
   { title: 'Projetos', path: '/projects' },
@@ -87,171 +59,105 @@ const menuLinks = [
 export default function HomePage() {
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('md'));
-  const [mobileOpen, setMobileOpen] = useState(false);
-  const [scrolled, setScrolled] = useState(false);
+  const [projects, setProjects] = useState<Project[]>([]);
+  const [profile, setProfile] = useState<any>({
+    name: '',
+    highlightedText: '',
+    description: '',
+    socialLinks: []
+  });
   
-  // Efeito para mudar o header ao scrollar
+  // Estado de carregamento para o perfil
+  const [profileLoading, setProfileLoading] = useState(true);
+
   useEffect(() => {
-    const handleScroll = () => {
-      setScrolled(window.scrollY > 50);
+    if (typeof window === 'undefined') return;
+
+    // Buscar projetos
+    const fetchProjects = async () => {
+      try {
+        console.log('Buscando projetos via ProjectService...');
+
+        const projectService = new ProjectService();
+        const fetchedProjects = await projectService.findAll();
+
+        console.log(`Projetos obtidos com sucesso: ${fetchedProjects.length}`);
+        if (fetchedProjects.length === 0) {
+          console.log('Nenhum projeto retornado pela API');
+          setProjects([]);
+          return;
+        }
+        const processedProjects = fetchedProjects.map((project: any) => ({
+          id: project._id || project.id,
+          title: project.title,
+          description: project.description,
+          imageUrl: project.imageUrl,
+          technologies: project.technologies || [],
+          createdAt: project.createdAt instanceof Date ? project.createdAt : new Date(project.createdAt),
+          updatedAt: project.updatedAt instanceof Date ? project.updatedAt : new Date(project.updatedAt),
+          githubUrl: project.githubUrl || '',
+          liveUrl: project.liveUrl || ''
+        }));
+        setProjects(processedProjects);
+      } catch (error) {
+        console.error('Erro ao buscar projetos:', error);
+      }
     };
-    
-    window.addEventListener('scroll', handleScroll);
-    return () => window.removeEventListener('scroll', handleScroll);
+
+    // Buscar perfil ativo
+    const fetchProfile = async () => {
+      try {
+        setProfileLoading(true);
+        console.log('Buscando perfil via ProfileService...');
+
+        const profileService = new ProfileService();
+        const activeProfile = await profileService.findActive();
+
+        if (activeProfile) {
+          console.log('Perfil ativo encontrado:', activeProfile);
+          setProfile({
+            name: activeProfile.name || '',
+            highlightedText: activeProfile.highlightedText || '',
+            description: activeProfile.description || '',
+            socialLinks: activeProfile.socialLinks || []
+          });
+        } else {
+          console.log('Nenhum perfil ativo encontrado, usando dados padrão');
+          // Configurar um perfil padrão para fallback
+          setProfile({
+            name: 'Desenvolvedor',
+            highlightedText: 'Portfólio Demo',
+            description: 'React, Next.js e Node.js',
+            socialLinks: [
+              { platform: 'github', url: 'https://github.com' }
+            ]
+          });
+        }
+      } catch (error) {
+        console.error('Erro ao buscar perfil:', error);
+        // Em caso de erro, também configurar um perfil padrão
+        setProfile({
+          name: 'Desenvolvedor',
+          highlightedText: 'Portfólio Demo',
+          description: 'React, Next.js e Node.js',
+          socialLinks: [
+            { platform: 'github', url: 'https://github.com' }
+          ]
+        });
+      } finally {
+        setProfileLoading(false);
+      }
+    };
+
+    fetchProjects();
+    fetchProfile();
   }, []);
-  
-  const handleDrawerToggle = () => {
-    setMobileOpen(!mobileOpen);
-  };
-  
-  // Drawer para menu mobile
-  const drawer = (
-    <Box onClick={handleDrawerToggle} sx={{ textAlign: 'center', p: 2, height: '100%' }}>
-      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
-        <Typography variant="h6" sx={{ fontWeight: 'bold', color: 'primary.main' }}>
-          Portfolio
-        </Typography>
-        <IconButton>
-          <Close />
-        </IconButton>
-      </Box>
-      <Divider sx={{ mb: 2 }} />
-      <List>
-        {menuLinks.map((item) => (
-          <ListItem key={item.title} disablePadding>
-            <ListItemButton
-              component={Link}
-              href={item.path}
-              sx={{
-                textAlign: 'center',
-                py: 1.5,
-                borderRadius: 2,
-                '&:hover': {
-                  bgcolor: 'rgba(25, 118, 210, 0.08)'
-                }
-              }}
-            >
-              <ListItemText primary={item.title} />
-            </ListItemButton>
-          </ListItem>
-        ))}
-      </List>
-      
-      <Box sx={{ mt: 'auto', py: 3, display: 'flex', justifyContent: 'center', gap: 2 }}>
-        <IconButton color="primary">
-          <GitHub />
-        </IconButton>
-        <IconButton color="primary">
-          <LinkedIn />
-        </IconButton>
-        <IconButton color="primary">
-          <Twitter />
-        </IconButton>
-      </Box>
-    </Box>
-  );
 
   return (
     <Box sx={{ overflow: 'hidden' }}>
-      {/* Header/Navbar */}
-      <AppBar 
-        position="fixed" 
-        color="transparent" 
-        elevation={0} 
-        sx={{ 
-          backdropFilter: scrolled ? 'blur(10px)' : 'none',
-          bgcolor: scrolled ? 'rgba(255, 255, 255, 0.8)' : 'transparent',
-          transition: 'all 0.3s',
-          boxShadow: scrolled ? '0 4px 20px rgba(0, 0, 0, 0.05)' : 'none'
-        }}
-      >
-        <Container maxWidth="xl">
-          <Toolbar sx={{ justifyContent: 'space-between', p: { xs: 1, md: 2 } }}>
-            <Typography variant="h6" component="div" sx={{ fontWeight: 'bold', color: scrolled ? 'primary.main' : 'white' }}>
-              Portfolio
-            </Typography>
-            
-            {/* Desktop Menu */}
-            {!isMobile && (
-              <Box sx={{ display: 'flex', alignItems: 'center', gap: 4 }}>
-                {menuLinks.map((link) => (
-                  <Button 
-                    key={link.title}
-                    component={Link} 
-                    href={link.path}
-                    sx={{ 
-                      color: scrolled ? 'text.primary' : 'white',
-                      fontWeight: 500,
-                      '&:hover': { 
-                        backgroundColor: 'transparent',
-                        color: 'primary.main'
-                      }
-                    }}
-                  >
-                    {link.title}
-                  </Button>
-                ))}
-              </Box>
-            )}
-            
-            {/* Contact Button */}
-            <Box sx={{ display: 'flex', alignItems: 'center' }}>
-              {!isMobile && (
-                <Button 
-                  component={Link}
-                  href="/contact"
-                  variant="contained" 
-                  color="primary" 
-                  sx={{ 
-                    borderRadius: '30px',
-                    px: 3,
-                    py: 1,
-                    textTransform: 'none',
-                    fontWeight: 'bold'
-                  }}
-                >
-                  Entre em contato
-                </Button>
-              )}
-              
-              {/* Mobile Menu Button */}
-              {isMobile && (
-                <IconButton 
-                  edge="start" 
-                  color="inherit" 
-                  aria-label="menu"
-                  onClick={handleDrawerToggle}
-                  sx={{ color: scrolled ? 'text.primary' : 'white' }}
-                >
-                  <MenuIcon />
-                </IconButton>
-              )}
-            </Box>
-          </Toolbar>
-        </Container>
-      </AppBar>
-      
-      {/* Mobile Menu Drawer */}
-      <Drawer
-        variant="temporary"
-        open={mobileOpen}
-        onClose={handleDrawerToggle}
-        ModalProps={{ keepMounted: true }}
+      <Navigation />
+      <Box
         sx={{
-          display: { xs: 'block', md: 'none' },
-          '& .MuiDrawer-paper': { 
-            boxSizing: 'border-box', 
-            width: 280,
-            borderRadius: '0 16px 16px 0'
-          },
-        }}
-      >
-        {drawer}
-      </Drawer>
-      
-      {/* Hero Section */}
-      <Box 
-        sx={{ 
           minHeight: '100vh',
           width: '100%',
           display: 'flex',
@@ -260,7 +166,6 @@ export default function HomePage() {
           background: 'linear-gradient(135deg, #5b21b6 0%, #1e40af 100%)'
         }}
       >
-        {/* Animated Particles */}
         <Particle
           sx={{
             width: 300,
@@ -291,19 +196,18 @@ export default function HomePage() {
             animationDelay: '4s'
           }}
         />
-        
-        <Container 
-          maxWidth="xl" 
-          sx={{ 
-            display: 'flex', 
+        <Container
+          maxWidth="xl"
+          sx={{
+            display: 'flex',
             alignItems: 'center',
             zIndex: 2,
             py: 8
           }}
         >
-          <Box 
-            sx={{ 
-              display: 'flex', 
+          <Box
+            sx={{
+              display: 'flex',
               flexDirection: { xs: 'column', md: 'row' },
               alignItems: 'center',
               justifyContent: 'space-between',
@@ -311,40 +215,73 @@ export default function HomePage() {
               width: '100%'
             }}
           >
-            {/* Left Content */}
             <Box sx={{ flex: 1, color: 'white', textAlign: { xs: 'center', md: 'left' } }}>
-              <Typography 
-                variant="h2" 
-                component="h1" 
-                sx={{ 
-                  fontSize: { xs: '2.5rem', md: '3.5rem', lg: '4rem' },
-                  fontWeight: 'bold',
-                  mb: 1,
-                  lineHeight: 1.2,
-                  background: 'linear-gradient(to right, #ffffff, #cbd5e1)',
-                  WebkitBackgroundClip: 'text',
-                  WebkitTextFillColor: 'transparent',
-                }}
-              >
+              {profileLoading ? (
+                // Estado de carregamento
+                <Box sx={{ height: '200px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                  {/* Efeito de esqueleto de carregamento */}
+                  <Box sx={{ width: '100%' }}>
+                    <Box
+                      sx={{
+                        height: '50px',
+                        mb: 2,
+                        borderRadius: '4px',
+                        background: 'linear-gradient(90deg, rgba(255,255,255,0.1) 0%, rgba(255,255,255,0.2) 50%, rgba(255,255,255,0.1) 100%)',
+                        backgroundSize: '200% 100%',
+                        animation: 'shimmer 1.5s infinite',
+                        '@keyframes shimmer': {
+                          '0%': { backgroundPosition: '200% 0' },
+                          '100%': { backgroundPosition: '-200% 0' }
+                        }
+                      }}
+                    />
+                    <Box
+                      sx={{
+                        height: '30px',
+                        width: '80%',
+                        mb: 3,
+                        borderRadius: '4px',
+                        background: 'linear-gradient(90deg, rgba(255,255,255,0.1) 0%, rgba(255,255,255,0.2) 50%, rgba(255,255,255,0.1) 100%)',
+                        backgroundSize: '200% 100%',
+                        animation: 'shimmer 1.5s infinite'
+                      }}
+                    />
+                  </Box>
+                </Box>
+              ) : (
+                // Conteúdo quando os dados do perfil estiverem carregados
+                <>
+                  <Typography
+                    variant="h2"
+                    component="h1"
+                    sx={{
+                      fontSize: { xs: '2.5rem', md: '3.5rem', lg: '4rem' },
+                      fontWeight: 'bold',
+                      mb: 1,
+                      lineHeight: 1.2,
+                      background: 'linear-gradient(to right, #ffffff, #cbd5e1)',
+                      WebkitBackgroundClip: 'text',
+                      WebkitTextFillColor: 'transparent'
+                    }}
+                  >
                 Olá, meu nome é{' '}
-                <Box 
+                <Box
                   component="span"
-                  sx={{ 
+                  sx={{
                     color: '#38bdf8',
                     display: 'inline-block',
                     position: 'relative',
                     background: 'linear-gradient(to right, #38bdf8, #818cf8)',
                     WebkitBackgroundClip: 'text',
-                    WebkitTextFillColor: 'transparent',
+                    WebkitTextFillColor: 'transparent'
                   }}
                 >
-                  Whalter
+                  {profile.highlightedText}
                 </Box>
               </Typography>
-              
-              <Typography 
-                variant="h5" 
-                sx={{ 
+              <Typography
+                variant="h5"
+                sx={{
                   mt: 3,
                   mb: 4,
                   fontWeight: 'normal',
@@ -353,68 +290,93 @@ export default function HomePage() {
                   mx: { xs: 'auto', md: 0 }
                 }}
               >
-                Desenvolvedor Full Stack especializado em{' '}
+                {profile.name}{' '}
                 <Box component="span" sx={{ fontWeight: 'bold' }}>
-                  React, Next.js e Node.js
+                  {profile.description}
                 </Box>
               </Typography>
-              
-              <Box 
-                sx={{ 
-                  display: 'flex', 
-                  gap: 2, 
-                  flexWrap: 'wrap',
-                  justifyContent: { xs: 'center', md: 'flex-start' }
-                }}
-              >
-                <PrimaryButton 
-                  variant="contained" 
-                  href="/projects" 
-                  endIcon={<ChevronRight />}
-                  onClick={(e) => {
-                    e.preventDefault();
-                    window.location.href = '/projects';
+                </>
+              )}
+              {!profileLoading && (
+                <Box
+                  sx={{
+                    display: 'flex',
+                    gap: 2,
+                    flexWrap: 'wrap',
+                    justifyContent: { xs: 'center', md: 'flex-start' }
                   }}
                 >
-                  Ver Projetos
-                </PrimaryButton>
-                <SecondaryButton 
-                  variant="outlined" 
-                  href="/contact"
-                  onClick={(e) => {
-                    e.preventDefault();
-                    window.location.href = '/contact';
+                  <PrimaryButton
+                    variant="contained"
+                    href="/projects"
+                    endIcon={<ChevronRight />}
+                    onClick={(e) => {
+                      e.preventDefault();
+                      window.location.href = '/projects';
+                    }}
+                  >
+                    Ver Projetos
+                  </PrimaryButton>
+                  <SecondaryButton
+                    variant="outlined"
+                    href="/contact"
+                    onClick={(e) => {
+                      e.preventDefault();
+                      window.location.href = '/contact';
+                    }}
+                  >
+                    Entre em Contato
+                  </SecondaryButton>
+                </Box>
+              )}
+              {!profileLoading && (
+                <Box
+                  sx={{
+                    display: 'flex',
+                    gap: 2,
+                    mt: 5,
+                    justifyContent: { xs: 'center', md: 'flex-start' }
                   }}
                 >
-                  Entre em Contato
-                </SecondaryButton>
-              </Box>
-              
-              <Box 
-                sx={{ 
-                  display: 'flex', 
-                  gap: 2, 
-                  mt: 5,
-                  justifyContent: { xs: 'center', md: 'flex-start' }
-                }}
-              >
-                <IconButton sx={{ color: 'white', '&:hover': { color: '#38bdf8' } }}>
-                  <GitHub />
-                </IconButton>
-                <IconButton sx={{ color: 'white', '&:hover': { color: '#38bdf8' } }}>
-                  <LinkedIn />
-                </IconButton>
-                <IconButton sx={{ color: 'white', '&:hover': { color: '#38bdf8' } }}>
-                  <Twitter />
-                </IconButton>
-              </Box>
+                  {profile.socialLinks && profile.socialLinks.length > 0 ? (
+                    profile.socialLinks.map((link, index) => {
+                      let Icon = GitHub;
+
+                      if (link.platform.toLowerCase() === 'linkedin') {
+                        Icon = LinkedIn;
+                      } else if (link.platform.toLowerCase() === 'twitter') {
+                        Icon = Twitter;
+                      }
+
+                      return (
+                        <IconButton
+                          key={index}
+                          component="a"
+                          href={link.url}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          aria-label={`${link.platform}`}
+                          sx={{
+                            color: 'white',
+                            '&:hover': { color: '#38bdf8', transform: 'translateY(-3px)' },
+                            transition: 'all 0.3s'
+                          }}
+                        >
+                          <Icon />
+                        </IconButton>
+                      );
+                    })
+                  ) : (
+                    // Se não houver links sociais, não exibimos nada
+                    <Box sx={{ display: 'none' }} />
+                  )}
+                </Box>
+              )}
             </Box>
-            
-            {/* Right Content - Illustration/Avatar */}
-            <Box 
-              sx={{ 
-                flex: 1, 
-                display: 'flex', 
+            <Box
+              sx={{
+                flex: 1,
+                display: 'flex',
                 justifyContent: 'center',
                 alignItems: 'center',
                 position: 'relative'
@@ -457,8 +419,70 @@ export default function HomePage() {
           </Box>
         </Container>
       </Box>
+      <Box sx={{ py: 8, bgcolor: 'background.default' }}>
+        <Container maxWidth="lg">
+          <Box sx={{ display: 'flex', alignItems: 'center', mb: 4 }}>
+            <Divider sx={{ flexGrow: 1, mr: 2 }} />
+            <Typography variant="h4" component="h2" color="primary" fontWeight="bold">
+              Projetos Recentes
+            </Typography>
+            <Divider sx={{ flexGrow: 1, ml: 2 }} />
+          </Box>
+          {projects.length > 0 ? (
+            <Box sx={{ mt: 4, mb: 6 }}>
+              <Box sx={{ display: { xs: 'none', md: 'block' } }}>
+                <TimelineComponent projects={projects.slice(0, 3)} />
+              </Box>
+              <Box
+                sx={{
+                  display: { xs: 'grid', md: 'none' },
+                  gridTemplateColumns: { xs: '1fr', sm: 'repeat(2, 1fr)' },
+                  gap: 4,
+                  mt: 4
+                }}
+              >
+                {projects.slice(0, 4).map((project) => (
+                  <ProjectCard key={project.id} project={project} />
+                ))}
+              </Box>
+              <Box sx={{ display: 'flex', justifyContent: 'center', mt: 6 }}>
+                <Button
+                  component={Link}
+                  href="/projects"
+                  variant="contained"
+                  color="primary"
+                  sx={{ borderRadius: '30px', px: 4 }}
+                >
+                  Ver Todos os Projetos
+                </Button>
+              </Box>
+            </Box>
+          ) : (
+            <Box sx={{ textAlign: 'center', py: 6 }}>
+              <Typography variant="h6" color="text.secondary">
+                Nenhum projeto encontrado.
+              </Typography>
+              <Typography variant="body1" color="text.secondary" sx={{ mt: 2, mb: 4 }}>
+                Os projetos adicionados pelo painel administrativo aparecerão aqui.
+              </Typography>
+            </Box>
+          )}
+        </Container>
+      </Box>
 
-      {/* Adicionar estilos globais para animações */}
+      <Box sx={{ py: 8, bgcolor: '#f5f7fa' }}>
+        <Container maxWidth="lg">
+          <Box sx={{ display: 'flex', alignItems: 'center', mb: 4 }}>
+            <Divider sx={{ flexGrow: 1, mr: 2 }} />
+            <Typography variant="h4" component="h2" color="primary" fontWeight="bold">
+              Sobre Mim
+            </Typography>
+            <Divider sx={{ flexGrow: 1, ml: 2 }} />
+          </Box>
+
+          <AboutMeSection />
+        </Container>
+      </Box>
       <style jsx global>{`
         @keyframes floatParticle {
           0%, 100% { transform: translateY(0) translateX(0); }
